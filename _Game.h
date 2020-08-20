@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <iostream>
 #include "_Board.h"
 #include "_Common.h"
@@ -19,8 +19,8 @@ private:
 	int _x, _y; // Tọa độ hiện hành của nháy chuột
 	int _command; // phím gõ từ người dùng
 	bool _loop = false; // Biến quyết định thoát game hay 60hông
-	long long attack[7] = { 0, 9, 54, 162, 1458, 13112, 118008 };
-	long long defense[7] = { 0, 3, 27, 99, 729, 6561, 59049 };
+	long long attack[7] = { 0, 3, 24, 192, 1536, 12288, 98304 };
+	long long defense[7] = { 0, 1, 9, 81, 729, 6561, 59049 };
 public:
 	_Game(Player&, Player&, int, int, int);
 	~_Game();
@@ -51,8 +51,8 @@ public:
 	bool bad_trip_1(int, int, int);
 	bool bad_trip_2(int, int, int);
 
-	long long attack_Dong(int, int);
 	long long attack_Cot(int, int);
+	long long attack_dong(int, int);
 	long long attack_Cheo_1(int, int);
 	long long attack_Cheo_2(int, int);
 
