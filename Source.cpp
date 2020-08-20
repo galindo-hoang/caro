@@ -48,7 +48,7 @@ void Play() {
 			
 			if (Game.processCheckBoard(first, second)) {
 
-				if (Game.processFinish(first, second) != 0) {
+				if (Game.processFinish(first, second)) {
 					_Common::gotoxy(0, _Common::getRows());
 					return;
 				}
@@ -99,7 +99,6 @@ void Play() {
 					first.~Player();
 					second.~Player();
 					Game.exitGame();
-					_Common::ClearConsoleToColors(0);
 					return;
 				}
 			}
@@ -488,6 +487,7 @@ void show_menu() {
 			case 1:
 				Load_Game();
 				Play();
+				_Common::ClearConsoleToColors(0);
 				_Common::gotoxy(half_Columns, current);
 				show_function_menu(current);
 				Picture.menu();
@@ -495,6 +495,7 @@ void show_menu() {
 			case 0:
 				trans_to_new_play();
 				Play();
+				_Common::ClearConsoleToColors(0);
 				show_function_menu(current);
 				Picture.menu();
 				break;
