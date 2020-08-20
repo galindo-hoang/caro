@@ -1,4 +1,4 @@
-﻿#include "_Board.h"
+#include "_Board.h"
 
 int _Board::getSize() { return _size; }
 
@@ -53,7 +53,7 @@ void _Board::resetData()
 void _Board::clearpipeline() {
 	for (int i = down_y_pipeline + 1; i < _Common::getRows(); ++i) {
 		_Common::gotoxy(left_x_pipeline + 1, i);
-		cout << "                                    ";
+		cout << "                                       ";
 	}
 }
 
