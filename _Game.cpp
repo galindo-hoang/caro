@@ -1,694 +1,994 @@
-﻿#include "_Game.h"
-
-_Game::_Game(Player& first, Player& second, int pSize, int pLeft, int pTop)
-{
+#include "Game.h"
+_Game::_Game(int pSize, int pLeft, int pTop) {
 	_b = new _Board(pSize, pLeft, pTop);
-	_command = -1; // Gán lượt và phím mặc định
+	_loop = _turn = true;
+	_command = -1; // Gán lượt và phím mặc định 
 	_x = pLeft; _y = pTop;
-	first.setLose(0);
-	first.setWin(0);
-	first.setDraw(0);
-	second.setLose(0);
-	second.setWin(0);
-	second.setDraw(0);
+	MangDiemTanCong = new long[7];
+	long mdtc[] = { 0, 3, 24, 192, 1536, 12288, 98304 };
+	for (int i = 0; i < 7; i++)
+		MangDiemTanCong[i] = mdtc[i];
+	MangDiemPhongNgu = new long[7];
+	long mdpn[] = { 0, 1, 9, 81,729,6561,59049 };
+	for (int i = 0; i < 7; i++)
+		MangDiemPhongNgu[i] = mdpn[i];
 }
 
-_Game::~_Game() { delete _b; }
+_Game::~_Game() { 
+	delete _b;
+	delete MangDiemTanCong;
+	delete MangDiemPhongNgu;
+}
 
 int _Game::getCommand() { return _command; }
 
 bool _Game::isContinue() { return _loop; }
 
-void _Game::setXY(int x, int y) {
-	_x = x;
-	_y = y;
-}
-
-char _Game::waitKeyBoard()
-{
-	if (_kbhit()) _command = toupper(_getch());
-
+char _Game::waitKeyBoard() {
+	if (stdin != NULL)
+		fflush(stdin);
+	_command = toupper(_getch());
 	return _command;
 }
 
-char _Game::askContinue()
-{
-	return _command;
+char _Game::askContinue() {
+	_Common::txtColor(15);
+	_Common::gotoXY(BOARD_SIZE * 5, TOP + 24);
+	cout << "Press Y to play new game!" << endl;
+	_Common::gotoXY(BOARD_SIZE * 5, TOP + 25);
+	cout << "Press diffrent key to exit" << endl;
+	char a = waitKeyBoard();
+	return a;
 }
 
-void _Game::startGame(Player& first, Player& second)
-{
-	_Picture::clear_x_o();
-	if (_loop) {
-		first.setID(0);
-		second.setID(0);
-		_b->resetData();
-	}
-	else _loop = true;
-	_b->drawBoard(first, second);
-	_x = 2;
-	_y = 1;
-	_b->drawTurn(first.getID(), second.getID());
-	if ((first.getID() + second.getID()) % 2 == 0) _Picture::draw_x();
-	else _Picture::draw_o();
+void _Game::startGame() {
+	system("cls");
+	PlaySound("bgSound", NULL, SND_ASYNC | SND_LOOP);
+	// Khởi tạo dữ liệu gốc
+	_b->resetData();  
+	_Game::CountStep1 = 0;
+	_Game::CountStep2 = 0;
+	_x = _b->getXAt(0, 0);
+	_y = _b->getYAt(0, 0);
+	_turn = true;
+	_b->drawBoard(); // Vẽ màn hình game 
+	// in ra thong so thang thua cua 2 nguoi choi
 
-	_Common::gotoxy(_x, _y);
+	_Common::gotoXY(BOARD_SIZE * 5, TOP + 3);
+	_Common::txtColor(15);
+	cout << "Win:";
+
+	_Common::gotoXY(BOARD_SIZE * 6, TOP + 3);
+	_Common::txtColor(11);
+	cout << _Game::CountWin1;
+
+	_Common::gotoXY(BOARD_SIZE * 6 + 6, TOP + 3);
+	_Common::txtColor(15);
+	cout << "--";
+
+	_Common::gotoXY(BOARD_SIZE * 7, TOP + 3);
+	_Common::txtColor(12);
+	cout << _Game::CountWin2;
+
+	//in so nuoc di cua 2 nguoi choi
+
+	_Common::gotoXY(BOARD_SIZE * 5, TOP + 5);
+	_Common::txtColor(15);
+	cout << "Step:";
+
+	_Common::gotoXY(BOARD_SIZE * 6, TOP + 5);
+	_Common::txtColor(11);
+	cout << _Game::CountStep1;
+
+	_Common::gotoXY(BOARD_SIZE * 6 + 6, TOP + 5);
+	_Common::txtColor(15);
+	cout << "--";
+
+	_Common::gotoXY(BOARD_SIZE * 7, TOP + 5);
+	_Common::txtColor(12);
+	cout << _Game::CountStep2;
+	//in lượt đánh
+	_Common::gotoXY(BOARD_SIZE * 5, TOP + 12);
+	_Common::txtColor(15);
+	cout << "Turn: ";
+	_Common::txtColor(11);
+	_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 10);
+	cout << char(219) << char(219) << "      " << char(219) << char(219);
+	_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 11);
+	cout << "  " << char(219) << char(219) << "  " << char(219) << char(219) << "  ";
+	_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 12);
+	cout << "    " << char(219) << char(219) << "    ";
+	_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 13);
+	cout << "  " << char(219) << char(219) << "  " << char(219) << char(219) << "  ";
+	_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 14);
+	cout << char(219) << char(219) << "      " << char(219) << char(219);
+
+	//sau khi bắt đầu game mới sẽ reset lại số nước đi
+	
+	_Common::gotoXY(_x, _y);
 }
 
-void _Game::exitGame()
-{
-	_loop = false;
-	_Common::ClearConsoleToColors(0);
-	_b->resetData();
-}
 
-bool _Game::processCheckBoard(Player& first, Player& second)
-{
-	switch (_b->checkTurn(_x / 4, _y / 2, first.getID() + second.getID()))
-	{
-	case 1:
-		_Common::textcolor(2 + BackRound_play * 16);
-		_Common::gotoxy(_x, _y);
-		++first;
-		printf("X");
-		_Picture::clear_x_o();
-		_Picture::draw_o();
-		break;
+bool _Game::processCheckBoard() {
+	switch (_b->checkBoard(_x, _y, _turn)) {
 	case -1:
-		_Common::textcolor(4 + BackRound_play * 16);
-		_Common::gotoxy(_x, _y);
-		++second;
+		_Common::txtColor(11);
+		printf("X");
+		//in ra số bước đi của người 1
+		_Game::CountStep1++;
+		_Common::gotoXY(BOARD_SIZE * 6, TOP + 5);
+		_Common::txtColor(11);
+		cout << _Game::CountStep1;
+		//in ra lượt đi của người 2
+		_Common::txtColor(12);
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 10);
+		cout << " " << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219)<< " ";
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 11);
+		cout << char(219) << char(219) << "      " << char(219) << char(219);
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 12);
+		cout << char(219) << char(219) << "      " << char(219) << char(219);
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 13);
+		cout << char(219) << char(219) << "      " << char(219) << char(219);
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 14);
+		cout << " " << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << " ";
+		break;
+	case 1:
+		_Common::txtColor(12);
 		printf("O");
-		_Picture::clear_x_o();
-		_Picture::draw_x();
+		//in ra số bước đi của người 2
+		_Game::CountStep2++;
+		_Common::gotoXY(BOARD_SIZE * 7, TOP + 5);
+		_Common::txtColor(12);
+		cout << _Game::CountStep2;
+		//in ra lượt đi của người 1
+		_Common::txtColor(11);
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 10);
+		cout << char(219) << char(219) << "      " << char(219) << char(219);
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 11);
+		cout <<"  "<<char(219) << char(219) << "  " << char(219) << char(219)<<"  ";
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 12);
+		cout << "    " << char(219) << char(219) << "    ";
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 13);
+		cout << "  " << char(219) << char(219) << "  " << char(219) << char(219) << "  ";
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 14);
+		cout << char(219) << char(219) << "      " << char(219) << char(219);
 		break;
 	case 0:
-		return false;
+		return false; // Khi đánh vào ô đã đánh rồi 
 	}
-	_b->drawTurn(first.getID(), second.getID());
-	_Common::gotoxy(_x, _y);
 	return true;
 }
 
-char _Game::processFinish(Player& first, Player& second) {
-	bool run = false;
-	switch (_b->check(_y / 2, _x / 4)) {
-	case 1:
-		run = true;
-		first.increaWin();
-		second.increaLose();
-		_b->clearpipeline();
-		_Picture::clear_x_o();
-		_Picture::draw_x();
-		_Common::textcolor(2 + BackRound_play * 16);
-		_Picture::show_win();
+int _Game::processFinish() { 
+	int pWhoWin = _b->testBoard(_x, _y);
+	if (_Game::CountStep1 + _Game::CountStep2 == BOARD_SIZE * BOARD_SIZE && pWhoWin == 2)
+		pWhoWin = 0; // nếu số nước đi của 2 bên cộng lại  = 13*13 và chưa thắng thì hòa
+	switch (pWhoWin) {
+	case WIN1:
+		PlaySound("winSound", NULL, SND_ASYNC);
+		//in ra x win
+		for (int i = 14; i > 9; i--)
+		{
+			_Common::txtColor(i);
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 17);
+			cout << char(219) << char(219) << char(187) << "  " << char(219) << char(219) << char(187) <<
+				"    " << char(219) << char(219) << char(187) << "    " << char(219) << char(219) << char(187) <<
+				char(219) << char(219) << char(187) << char(219) << char(219) << char(219) << char(187) << "   " <<
+				char(219) << char(219) << char(187);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 18);
+			cout << char(200) << char(219) << char(219) << char(187) << char(219) << char(219) << char(201) << char(188) << "    " <<
+				char(219) << char(219) << char(186) << "    " << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) <<
+				char(219) << char(219) << char(219) << char(219) << char(187) << "  " << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 19);
+			cout<<" " << char(200) << char(219) << char(219)<<char(219) << char(201) << char(188) << "     " << char(219) << char(219) << char(186) <<
+				" " << char(219) << char(187) << " " << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) <<
+				char(219) << char(219) << char(201) << char(219) << char(219) << char(187) << " "<<char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 20);
+			cout << " " << char(219) << char(219) << char(201) << char(219) << char(219) << char(187) << "     " << char(219) << char(219) << char(186) <<
+				char(219) << char(219) << char(219) << char(187) << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) <<
+				char(219) << char(219) << char(186) << char(200) << char(219) << char(219) << char(187) << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 21);
+			cout << char(219) << char(219) << char(201) << char(188) << " " << char(219) << char(219) << char(187) << "    " << char(200) << char(219) << char(219) << char(219) <<
+				char(201) << char(219) << char(219) << char(219) << char(201)<<char(188) << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) << " " <<
+				char(200) << char(219) << char(219) << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 22);
+			cout << char(200) << char(205) << char(188) << "  " << char(200) << char(205) << char(188) << "     " << char(200) << char(205) << char(205) << char(188) <<
+				char(200) << char(205) << char(205) << char(188) << " " << char(200) << char(205) << char(188) << char(200) << char(205) << char(188) << "  " <<
+				char(200) << char(205) << char(205) << char(205) << char(188);
+			Sleep(800);
+		}
+		_Game::CountWin1++;
 		break;
+	case WIN2:
+		PlaySound("winSound", NULL, SND_ASYNC);
+		//in ra o win
+		for (int i = 14; i > 9; i--)
+		{
+			_Common::txtColor(i);
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 17);
+			cout <<" " << char(219) << char(219) << char(219) << char(219)<<char(219)<<char(219) << char(187) <<
+				"     " << char(219) << char(219) << char(187) << "    " << char(219) << char(219) << char(187) <<
+				char(219) << char(219) << char(187) << char(219) << char(219) << char(219) << char(187) << "   " <<
+				char(219) << char(219) << char(187);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 18);
+			cout << char(219) << char(219) << char(201) << char(205) << char(205) << char(205) << char(219)<<char(219) << char(187) << "    " <<
+				char(219) << char(219) << char(186) << "    " << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) <<
+				char(219) << char(219) << char(219) << char(219) << char(187) << "  " << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 19);
+			cout << char(219) << char(219) << char(186)<<"   " << char(219) << char(219) << char(186) << "    " << char(219) << char(219) << char(186) <<
+				" " << char(219) << char(187) << " " << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) <<
+				char(219) << char(219) << char(201) << char(219) << char(219) << char(187) << " " << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 20);
+			cout << char(219) << char(219) << char(186) << "   " << char(219) << char(219) << char(186) << "    " << char(219) << char(219) << char(186) <<
+				char(219) << char(219) << char(219) << char(187) << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) <<
+				char(219) << char(219) << char(186) << char(200) << char(219) << char(219) << char(187) << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 21);
+			cout << char(200) << char(219)<< char(219) << char(219) << char(219) << char(219) << char(219)<<char(201)<<char(188) << "    " << char(200) << char(219) << char(219) << char(219) <<
+				char(201) << char(219) << char(219) << char(219) << char(201) << char(188) << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) << " " <<
+				char(200) << char(219) << char(219) << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 22);
+			cout <<" "<<char(200)<<char(205)<< char(205) << char(205) << char(205) << char(205) <<char(188)<< "      " << char(200) << char(205) << char(205) << char(188) <<
+				char(200) << char(205) << char(205) << char(188) << " " << char(200) << char(205) << char(188) << char(200) << char(205) << char(188) << "  " <<
+				char(200) << char(205) << char(205) << char(205) << char(188);
+			Sleep(800);
+		}
+		_Game::CountWin2++;
+		break;
+	case DRAW:
+		PlaySound("winSound", NULL, SND_ASYNC);
+		for (int i = 14; i > 9; i--)
+		{
+			_Common::txtColor(i);
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 17);
+			cout << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(187) << " " << char(219) << char(219) <<
+				char(219) << char(219) << char(219) << char(219) << char(187) << "  " << char(219) << char(219) << char(219) << char(219) << char(219) << char(187) <<
+				" " << char(219) << char(219) << char(187) << "    " << char(219) << char(219) << char(187);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 18);
+			cout << char(219) << char(219) << char(201) << char(205) << char(205) << char(219) << char(219) << char(187) << char(219) << char(219) << char(201) << char(205) << char(205) <<
+				char(219) << char(219) << char(187) << char(219) << char(219) << char(201) << char(205) << char(205) << char(219) << char(219) << char(187) << char(219) << char(219) <<
+				char(186) << "    " << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 19);
+			cout << char(219) << char(219) << char(186) << "  " << char(219) << char(219) << char(186) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) <<
+				char(201) << char(188) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(186) << char(219) << char(219) <<
+				char(186) << " " << char(219) << char(187) << " " << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 20);
+			cout << char(219) << char(219) << char(186) << "  " << char(219) << char(219) << char(186) << char(219) << char(219) << char(201) << char(205) << char(205) <<
+				char(219) << char(219) << char(187) << char(219) << char(219) << char(201) << char(205) << char(205) << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) <<
+				char(219) << char(219) << char(219) << char(187) << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 21);
+			cout << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(201) << char(188) << char(219) << char(219) << char(186) << "  " <<
+				char(219) << char(219) << char(186) << char(219) << char(219) << char(186) << "  " << char(219) << char(219) << char(186) << char(200) << char(219) << char(219) << char(219) <<
+				char(201) << char(219) << char(219) << char(219) << char(201) << char(188);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 22);
+			cout << char(200) << char(205) << char(205) << char(205) << char(205) << char(205) << char(188) << " " << char(200) << char(205) << char(188) << "  " << char(200) << char(205) << char(188) <<
+				char(200) << char(205) << char(188) << "  " << char(200) << char(205) << char(188)<<" " << char(200) << char(205) << char(205) << char(188) <<
+				char(200) << char(205) << char(205) << char(188);
+
+			Sleep(800);
+		}
+		break;
+	case CONTINUE:
+		_turn = !_turn;// Đổi lượt nếu không có gì xảy ra
+		_Common::gotoXY(_x, _y);// Trả về vị trí hiện hành của con trỏ màn hình bàn cờ
+	}
+	return pWhoWin;
+}
+void _Game::moveRight() {
+	if (_x < _b->getXAt(_b->getSize() - 1, _b->getSize() - 1)) {
+		_x += 4;
+		_Common::gotoXY(_x, _y);
+	}
+}
+void _Game::moveLeft() {
+	if (_x > _b->getXAt(0, 0)) {
+		_x -= 4;
+		_Common::gotoXY(_x, _y);
+	}
+}
+void _Game::moveDown() {
+	if (_y < _b->getYAt(_b->getSize() - 1, _b->getSize() - 1)) {
+		_y += 2;
+		_Common::gotoXY(_x, _y);
+	}
+}
+void _Game::moveUp() {
+	if (_y > _b->getYAt(0, 0)) {
+		_y -= 2;
+		_Common::gotoXY(_x, _y);
+	}
+}
+
+void _Game::loadGame(string a) {
+	ifstream fin;
+	char ch;
+	fin.open(a, ios::in);
+	startGame();
+	fin >> CountWin1;
+	fin >> CountWin2;
+	fin >> CountStep1;
+	fin >> CountStep2;
+	for (int i = 0; i < BOARD_SIZE; i++) {
+		for (int j = 0; j < BOARD_SIZE; j++) {
+			fin >> ch;
+			if (int(ch) - 48 == 2) _b->setPointcheck(i, j, -1);
+			else
+			{
+				_b->setPointcheck(i, j, int(ch) - 48);
+			}
+			_Common::gotoXY(_b->getXAt(i, j), _b->getYAt(i, j));
+			switch (int(ch) - 48) {
+			case 2:
+				_Common::txtColor(11);
+				printf("X");
+				break;
+			case 1:
+				_Common::txtColor(12);
+				printf("O");
+				break;
+			case 0:
+				break;//khi đọc số 0 
+			}
+		}
+	}
+	fin.close();
+	//in lại số nước đi của 2 người chơi
+	_Common::gotoXY(BOARD_SIZE * 6, TOP + 5);
+	_Common::txtColor(11);
+	cout << _Game::CountStep1;
+
+	_Common::gotoXY(BOARD_SIZE * 7, TOP + 5);
+	_Common::txtColor(12);
+	cout << _Game::CountStep2;
+	//xét lượt đi
+	if (CountStep1 == CountStep2) _turn = true;
+	else
+	{
+		_turn = false;
+		//in ra lượt đi của người thứ 2
+		_Common::txtColor(12);
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 10);
+		cout << " " << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << " ";
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 11);
+		cout << char(219) << char(219) << "      " << char(219) << char(219);
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 12);
+		cout << char(219) << char(219) << "      " << char(219) << char(219);
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 13);
+		cout << char(219) << char(219) << "      " << char(219) << char(219);
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 14);
+		cout << " " << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << " ";
+	}
+	_Common::gotoXY(_b->getXAt(0, 0), _b->getYAt(0, 0));//di chuyển vào ô đầu
+}
+
+void _Game::exitGame() {
+	////////////Có thể lưu game trước khi exit////////////////////////////////////////
+	if (_b->testBoard(_x,_y) == CONTINUE)
+	{
+		_Common::txtColor(15);
+		_Common::gotoXY(BOARD_SIZE * 5, TOP + 20);
+		cout << "Do you want to save game?";
+		_Common::gotoXY(BOARD_SIZE * 5, TOP + 21);
+		cout << "Yes: Press L\tNo: Press diffrent key";
+		char a = waitKeyBoard();
+		if (a == 'L') {
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 22);
+			cout << "Nhap ten tap tin de luu: " << endl;
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 23);
+			string a;
+			getline(cin, a);
+			ofstream f;
+			f.open(a, ios::out);
+			f << CountWin1 << endl;
+			f << CountWin2 << endl;
+			f << CountStep1 << endl;
+			f << CountStep2 << endl;
+			for (int i = 0; i < BOARD_SIZE; i++) {
+				for (int j = 0; j < BOARD_SIZE; j++) {
+					if (_b->getPoint(i, j).getCheck() == -1)
+						f << 2;
+					else {
+						f << _b->getPoint(i, j).getCheck();
+					}
+				}
+			}
+			f.close();
+		}
+	}
+	system("cls");
+	_loop = false;
+}
+//danh voi may trung binh
+
+bool _Game::processCheckBoardWithMachine() {
+	switch (_b->checkBoardWithMachine(_x, _y)) {
 	case -1:
-		run = true;
-		second.increaWin();
-		first.increaLose();
-		_b->clearpipeline();
-		_Picture::clear_x_o();
-		_Picture::draw_o();
-		_Common::textcolor(4 + BackRound_play * 16);
-		_Picture::show_win();
+		_Common::txtColor(11);
+		printf("X");
+		//in ra số bước đi của người 1
+		_Game::CountStep1++;
+		_Common::gotoXY(BOARD_SIZE * 6, TOP + 5);
+		_Common::txtColor(11);
+		cout << _Game::CountStep1;
+		//in ra lượt đi của máy
+		_Common::txtColor(12);
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 10);
+		cout << " " << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << " ";
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 11);
+		cout << char(219) << char(219) << "      " << char(219) << char(219);
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 12);
+		cout << char(219) << char(219) << "      " << char(219) << char(219);
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 13);
+		cout << char(219) << char(219) << "      " << char(219) << char(219);
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 14);
+		cout << " " << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << " ";
+		_Common::gotoXY(_x, _y);
 		break;
-	case 2:
-		run = true;
-		second.increaDraw();
-		first.increaDraw();
-		_Picture::clear_x_o();
-		_b->clearpipeline();
-		_Picture::show_draw();
+	case 0:
+		return false; // Khi đánh vào ô đã đánh rồi 
+	}
+	return true;
+}
+
+int _Game::processFinishWithMachine() {
+	// Nhảy tới vị trí thích hợp để in chuỗi thắng/thua/hòa   
+	int pWhoWin = _b->testBoard(_x,_y);
+	if (_Game::CountStep1 + _Game::CountStep2 == BOARD_SIZE * BOARD_SIZE && pWhoWin == 2)
+		pWhoWin = 0; // nếu số nước đi của 2 bên cộng lại  = 13*13 và chưa thắng thì hòa
+	switch (pWhoWin) {
+	case WIN1:
+		PlaySound("winSound", NULL, SND_ASYNC);
+		//in ra x win
+		for (int i = 14; i > 9; i--)
+		{
+			_Common::txtColor(i);
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 17);
+			cout << char(219) << char(219) << char(187) << "  " << char(219) << char(219) << char(187) <<
+				"    " << char(219) << char(219) << char(187) << "    " << char(219) << char(219) << char(187) <<
+				char(219) << char(219) << char(187) << char(219) << char(219) << char(219) << char(187) << "   " <<
+				char(219) << char(219) << char(187);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 18);
+			cout << char(200) << char(219) << char(219) << char(187) << char(219) << char(219) << char(201) << char(188) << "    " <<
+				char(219) << char(219) << char(186) << "    " << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) <<
+				char(219) << char(219) << char(219) << char(219) << char(187) << "  " << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 19);
+			cout << " " << char(200) << char(219) << char(219) << char(219) << char(201) << char(188) << "     " << char(219) << char(219) << char(186) <<
+				" " << char(219) << char(187) << " " << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) <<
+				char(219) << char(219) << char(201) << char(219) << char(219) << char(187) << " " << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 20);
+			cout << " " << char(219) << char(219) << char(201) << char(219) << char(219) << char(187) << "     " << char(219) << char(219) << char(186) <<
+				char(219) << char(219) << char(219) << char(187) << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) <<
+				char(219) << char(219) << char(186) << char(200) << char(219) << char(219) << char(187) << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 21);
+			cout << char(219) << char(219) << char(201) << char(188) << " " << char(219) << char(219) << char(187) << "    " << char(200) << char(219) << char(219) << char(219) <<
+				char(201) << char(219) << char(219) << char(219) << char(201) << char(188) << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) << " " <<
+				char(200) << char(219) << char(219) << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 22);
+			cout << char(200) << char(205) << char(188) << "  " << char(200) << char(205) << char(188) << "     " << char(200) << char(205) << char(205) << char(188) <<
+				char(200) << char(205) << char(205) << char(188) << " " << char(200) << char(205) << char(188) << char(200) << char(205) << char(188) << "  " <<
+				char(200) << char(205) << char(205) << char(205) << char(188);
+			Sleep(800);
+		}
+		_Game::CountWin1++;
 		break;
-	}
+	case WIN2:
+		PlaySound("winSound", NULL, SND_ASYNC);
+		//in ra o win
+		for (int i = 14; i > 9; i--)
+		{
+			_Common::txtColor(i);
+			_Common::txtColor(i);
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 17);
+			cout << " " << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(187) <<
+				"     " << char(219) << char(219) << char(187) << "    " << char(219) << char(219) << char(187) <<
+				char(219) << char(219) << char(187) << char(219) << char(219) << char(219) << char(187) << "   " <<
+				char(219) << char(219) << char(187);
 
-	char result;
-	_Common::textcolor(0 + BackRound_play * 16);
-	while (run) {
-		_Common::gotoxy(left_x_pipeline + 1, _Common::getRows() - 3);
-		cout << "   Do you want to play continue Y/N";
-		_Common::gotoxy(left_x_pipeline + 1, _Common::getRows() - 2);
-		cout << "              (yes/no): ";
-		cin >> result;
-		_Common::gotoxy(left_x_pipeline + 1, _Common::getRows() - 3);
-		cout << "   Do you want to play continue Y/N";
-		_Common::gotoxy(left_x_pipeline + 1, _Common::getRows() - 2);
-		cout << "              (yes/no): ";
-		cout << "    ";
-		if (result == 'y' || result == 'Y' || result == 'n' || result == 'N') {
-			return result;
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 18);
+			cout << char(219) << char(219) << char(201) << char(205) << char(205) << char(205) << char(219) << char(219) << char(187) << "    " <<
+				char(219) << char(219) << char(186) << "    " << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) <<
+				char(219) << char(219) << char(219) << char(219) << char(187) << "  " << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 19);
+			cout << char(219) << char(219) << char(186) << "   " << char(219) << char(219) << char(186) << "    " << char(219) << char(219) << char(186) <<
+				" " << char(219) << char(187) << " " << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) <<
+				char(219) << char(219) << char(201) << char(219) << char(219) << char(187) << " " << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 20);
+			cout << char(219) << char(219) << char(186) << "   " << char(219) << char(219) << char(186) << "    " << char(219) << char(219) << char(186) <<
+				char(219) << char(219) << char(219) << char(187) << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) <<
+				char(219) << char(219) << char(186) << char(200) << char(219) << char(219) << char(187) << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 21);
+			cout << char(200) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(201) << char(188) << "    " << char(200) << char(219) << char(219) << char(219) <<
+				char(201) << char(219) << char(219) << char(219) << char(201) << char(188) << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) << " " <<
+				char(200) << char(219) << char(219) << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 22);
+			cout << " " << char(200) << char(205) << char(205) << char(205) << char(205) << char(205) << char(188) << "      " << char(200) << char(205) << char(205) << char(188) <<
+				char(200) << char(205) << char(205) << char(188) << " " << char(200) << char(205) << char(188) << char(200) << char(205) << char(188) << "  " <<
+				char(200) << char(205) << char(205) << char(205) << char(188);
+			Sleep(800);
 		}
-		result = '\0';
+		_Game::CountWin2++;
+		break;
+	case DRAW:
+		PlaySound("winSound", NULL, SND_ASYNC);
+		//in ra hòa
+		for (int i = 14; i > 9; i--)
+		{
+			_Common::txtColor(i);
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 17);
+			cout << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(187) << " " << char(219) << char(219) <<
+				char(219) << char(219) << char(219) << char(219) << char(187) << "  " << char(219) << char(219) << char(219) << char(219) << char(219) << char(187) <<
+				" " << char(219) << char(219) << char(187) << "    " << char(219) << char(219) << char(187);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 18);
+			cout << char(219) << char(219) << char(201) << char(205) << char(205) << char(219) << char(219) << char(187) << char(219) << char(219) << char(201) << char(205) << char(205) <<
+				char(219) << char(219) << char(187) << char(219) << char(219) << char(201) << char(205) << char(205) << char(219) << char(219) << char(187) << char(219) << char(219) <<
+				char(186) << "    " << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 19);
+			cout << char(219) << char(219) << char(186) << "  " << char(219) << char(219) << char(186) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) <<
+				char(201) << char(188) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(186) << char(219) << char(219) <<
+				char(186) << " " << char(219) << char(187) << " " << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 20);
+			cout << char(219) << char(219) << char(186) << "  " << char(219) << char(219) << char(186) << char(219) << char(219) << char(201) << char(205) << char(205) <<
+				char(219) << char(219) << char(187) << char(219) << char(219) << char(201) << char(205) << char(205) << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) <<
+				char(219) << char(219) << char(219) << char(187) << char(219) << char(219) << char(186);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 21);
+			cout << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(201) << char(188) << char(219) << char(219) << char(186) << "  " <<
+				char(219) << char(219) << char(186) << char(219) << char(219) << char(186) << "  " << char(219) << char(219) << char(186) << char(200) << char(219) << char(219) << char(219) <<
+				char(201) << char(219) << char(219) << char(219) << char(201) << char(188);
+
+			_Common::gotoXY(BOARD_SIZE * 5, TOP + 22);
+			cout << char(200) << char(205) << char(205) << char(205) << char(205) << char(205) << char(188) << " " << char(200) << char(205) << char(188) << "  " << char(200) << char(205) << char(188) <<
+				char(200) << char(205) << char(188) << "  " << char(200) << char(205) << char(188) << " " << char(200) << char(205) << char(205) << char(188) <<
+				char(200) << char(205) << char(205) << char(188);
+
+			Sleep(800);
+		}
+		break;
+	case CONTINUE:
+		//xu ly danh voi may
+		_Point* oco = TimKiemNuocDi();
+		_x = oco->getX();
+		_y = oco->getY();
+		_b->setPointcheck((_y - 2) / 2, (_x - 3) / 4, 1);
+		_Common::gotoXY(_x,_y);
+		_Common::txtColor(12);
+		printf("O");
+		//in ra số bước đi của máy
+		_Game::CountStep2++;
+		_Common::gotoXY(BOARD_SIZE * 7, TOP + 5);
+		_Common::txtColor(12);
+		cout << _Game::CountStep2;
+		//in ra lượt đi của người 1
+		_Common::txtColor(11);
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 10);
+		cout << char(219) << char(219) << "      " << char(219) << char(219);
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 11);
+		cout << "  " << char(219) << char(219) << "  " << char(219) << char(219) << "  ";
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 12);
+		cout << "    " << char(219) << char(219) << "    ";
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 13);
+		cout << "  " << char(219) << char(219) << "  " << char(219) << char(219) << "  ";
+		_Common::gotoXY(BOARD_SIZE * 6 + 2, TOP + 14);
+		cout << char(219) << char(219) << "      " << char(219) << char(219);
+		//xu ly in ra man hinh neu may thang hoac hoa
+		int kq = _b->testBoard(_x,_y);
+		if (kq != CONTINUE)
+		{
+			switch (kq) {
+			case WIN2:
+				PlaySound("winSound", NULL, SND_ASYNC);
+				//in ra o win
+				for (int i = 14; i > 9; i--)
+				{
+					_Common::txtColor(i);
+					_Common::gotoXY(BOARD_SIZE * 5, TOP + 17);
+					cout << " " << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(187) <<
+						"     " << char(219) << char(219) << char(187) << "    " << char(219) << char(219) << char(187) <<
+						char(219) << char(219) << char(187) << char(219) << char(219) << char(219) << char(187) << "   " <<
+						char(219) << char(219) << char(187);
+
+					_Common::gotoXY(BOARD_SIZE * 5, TOP + 18);
+					cout << char(219) << char(219) << char(201) << char(205) << char(205) << char(205) << char(219) << char(219) << char(187) << "    " <<
+						char(219) << char(219) << char(186) << "    " << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) <<
+						char(219) << char(219) << char(219) << char(219) << char(187) << "  " << char(219) << char(219) << char(186);
+
+					_Common::gotoXY(BOARD_SIZE * 5, TOP + 19);
+					cout << char(219) << char(219) << char(186) << "   " << char(219) << char(219) << char(186) << "    " << char(219) << char(219) << char(186) <<
+						" " << char(219) << char(187) << " " << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) <<
+						char(219) << char(219) << char(201) << char(219) << char(219) << char(187) << " " << char(219) << char(219) << char(186);
+
+					_Common::gotoXY(BOARD_SIZE * 5, TOP + 20);
+					cout << char(219) << char(219) << char(186) << "   " << char(219) << char(219) << char(186) << "    " << char(219) << char(219) << char(186) <<
+						char(219) << char(219) << char(219) << char(187) << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) <<
+						char(219) << char(219) << char(186) << char(200) << char(219) << char(219) << char(187) << char(219) << char(219) << char(186);
+
+					_Common::gotoXY(BOARD_SIZE * 5, TOP + 21);
+					cout << char(200) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(201) << char(188) << "    " << char(200) << char(219) << char(219) << char(219) <<
+						char(201) << char(219) << char(219) << char(219) << char(201) << char(188) << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) << " " <<
+						char(200) << char(219) << char(219) << char(219) << char(219) << char(186);
+
+					_Common::gotoXY(BOARD_SIZE * 5, TOP + 22);
+					cout << " " << char(200) << char(205) << char(205) << char(205) << char(205) << char(205) << char(188) << "      " << char(200) << char(205) << char(205) << char(188) <<
+						char(200) << char(205) << char(205) << char(188) << " " << char(200) << char(205) << char(188) << char(200) << char(205) << char(188) << "  " <<
+						char(200) << char(205) << char(205) << char(205) << char(188);
+					Sleep(800);
+				}
+				_Game::CountWin2++;
+				break;
+			case DRAW:
+				//in ra hòa
+				PlaySound("winSound", NULL, SND_ASYNC);
+				for (int i = 14; i > 9; i--)
+				{
+					_Common::txtColor(i);
+					_Common::gotoXY(BOARD_SIZE * 5, TOP + 17);
+					cout << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(187) << " " << char(219) << char(219) <<
+						char(219) << char(219) << char(219) << char(219) << char(187) << "  " << char(219) << char(219) << char(219) << char(219) << char(219) << char(187) <<
+						" " << char(219) << char(219) << char(187) << "    " << char(219) << char(219) << char(187);
+
+					_Common::gotoXY(BOARD_SIZE * 5, TOP + 18);
+					cout << char(219) << char(219) << char(201) << char(205) << char(205) << char(219) << char(219) << char(187) << char(219) << char(219) << char(201) << char(205) << char(205) <<
+						char(219) << char(219) << char(187) << char(219) << char(219) << char(201) << char(205) << char(205) << char(219) << char(219) << char(187) << char(219) << char(219) <<
+						char(186) << "    " << char(219) << char(219) << char(186);
+
+					_Common::gotoXY(BOARD_SIZE * 5, TOP + 19);
+					cout << char(219) << char(219) << char(186) << "  " << char(219) << char(219) << char(186) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) <<
+						char(201) << char(188) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(186) << char(219) << char(219) <<
+						char(186) << " " << char(219) << char(187) << " " << char(219) << char(219) << char(186);
+
+					_Common::gotoXY(BOARD_SIZE * 5, TOP + 20);
+					cout << char(219) << char(219) << char(186) << "  " << char(219) << char(219) << char(186) << char(219) << char(219) << char(201) << char(205) << char(205) <<
+						char(219) << char(219) << char(187) << char(219) << char(219) << char(201) << char(205) << char(205) << char(219) << char(219) << char(186) << char(219) << char(219) << char(186) <<
+						char(219) << char(219) << char(219) << char(187) << char(219) << char(219) << char(186);
+
+					_Common::gotoXY(BOARD_SIZE * 5, TOP + 21);
+					cout << char(219) << char(219) << char(219) << char(219) << char(219) << char(219) << char(201) << char(188) << char(219) << char(219) << char(186) << "  " <<
+						char(219) << char(219) << char(186) << char(219) << char(219) << char(186) << "  " << char(219) << char(219) << char(186) << char(200) << char(219) << char(219) << char(219) <<
+						char(201) << char(219) << char(219) << char(219) << char(201) << char(188);
+
+					_Common::gotoXY(BOARD_SIZE * 5, TOP + 22);
+					cout << char(200) << char(205) << char(205) << char(205) << char(205) << char(205) << char(188) << " " << char(200) << char(205) << char(188) << "  " << char(200) << char(205) << char(188) <<
+						char(200) << char(205) << char(188) << "  " << char(200) << char(205) << char(188) << " " << char(200) << char(205) << char(205) << char(188) <<
+						char(200) << char(205) << char(205) << char(188);
+					Sleep(800);
+				}
+				break;
+			}
+			return kq;
+		}
+		else
+		{
+			_turn = !_turn;// Đổi lượt sau khi đánh xong
+		}
+		_Common::gotoXY(_x, _y);// Trả về vị trí vừa đánh của máy
 	}
-	
-	return ' ';
+	return pWhoWin;
 }
 
-void _Game::moveRight()
+_Point* _Game::TimKiemNuocDi()
 {
-	_x += 4;
-	if (_x > (_b->getSize() * 4)) _x = 2;
-	_Common::gotoxy(_x, _y);
+	_Point* oCoResult = new _Point();
+	long DiemMax = 0;
+	for (int i = 0; i < BOARD_SIZE; i++)
+	{
+		for (int j = 0; j < BOARD_SIZE; j++)
+		{
+			if (_b->getPoint(i, j).getCheck() == 0)
+			{
+				long DiemTC = DiemTC_DuyetDoc(i, j) + DiemTC_DuyetNgang(i, j) + DiemTC_DuyetCheoPhai(i, j) + DiemTC_DuyetCheoTrai(i, j);
+				long DiemPN = DiemPN_DuyetDoc(i, j) + DiemPN_DuyetNgang(i, j) + DiemPN_DuyetCheoPhai(i, j) + DiemPN_DuyetCheoTrai(i, j);
+				long DiemTam = DiemTC > DiemPN ? DiemTC : DiemPN;
+				if (DiemMax < DiemTam)
+				{
+					DiemMax = DiemTam;
+					oCoResult->setX(_b->getPoint(i, j).getX());
+					oCoResult->setY(_b->getPoint(i, j).getY());
+				}
+			}
+		}
+	}
+	return oCoResult;
 }
 
-void _Game::moveLeft()
+//tấn công
+long _Game::DiemTC_DuyetDoc(int dong, int cot)
 {
-	_x -= 4;
-	if (_x < 2) _x = (_b->getSize() * 4) - 2;
-	_Common::gotoxy(_x, _y);
+	int diemtru = 0;
+	if (dong == BOARD_SIZE || dong * cot == 0 || cot == BOARD_SIZE) diemtru = 9;
+	int SoQuanTa = 0;
+	int SoQuanDich = 0;
+	//duyệt trên xuống
+	for (int Dem = 1; Dem < 6 && dong + Dem < BOARD_SIZE; Dem++)
+	{
+		int check = _b->getPoint(dong + Dem, cot).getCheck();
+		if (check == 1) SoQuanTa++;
+		else if (check == -1)
+		{
+			SoQuanDich++;
+			break;
+		}
+		else break;//gặp ô trống
+	}
+	//duyệt dưới lên
+	for (int Dem = 1; Dem < 6 && dong - Dem >=0 ; Dem++)
+	{
+		int check = _b->getPoint(dong - Dem, cot).getCheck();
+		if (check == 1)	SoQuanTa++;
+		else if (check == -1)
+		{
+			SoQuanDich++;
+			break;
+		}
+		else break;//gặp ô trống
+	}
+	//Bị chặn 2 đầu
+	if (SoQuanDich == 2) return 0;
+	return MangDiemTanCong[SoQuanTa] - MangDiemPhongNgu[SoQuanDich + 1] - diemtru;
 }
 
-void _Game::moveDown()
+long _Game::DiemTC_DuyetNgang(int dong, int cot)
 {
-	_y += 2;
-	if (_y > (_b->getSize() * 2)) _y = 1;
-	_Common::gotoxy(_x, _y);
+	int diemtru = 0;
+	if (dong == BOARD_SIZE || dong * cot == 0 || cot == BOARD_SIZE) diemtru = 9;
+	int SoQuanTa = 0;
+	int SoQuanDich = 0;
+	//duyệt bên phải
+	for (int Dem = 1; Dem < 6 && cot + Dem < BOARD_SIZE; Dem++)
+	{
+		int check = _b->getPoint(dong, cot + Dem).getCheck();
+		if (check == 1) SoQuanTa++;
+		else if (check == -1)
+		{
+			SoQuanDich++;
+			break;
+		}
+		else break; // gặp ô trống
+	}
+	//duyệt bên trái
+	for (int Dem = 1; Dem < 6 && cot - Dem >= 0; Dem++)
+	{
+		int check = _b->getPoint(dong, cot - Dem).getCheck();
+		if (check == 1) SoQuanTa++;
+		else if (check == -1)
+		{
+			SoQuanDich++;
+			break;
+		}
+		else break;//gặp ô trống
+	}
+	//Bị chặn 2 đầu
+	if (SoQuanDich == 2) return 0;
+
+	return MangDiemTanCong[SoQuanTa] - MangDiemPhongNgu[SoQuanDich + 1] - diemtru;
 }
 
-void _Game::moveUp()
+long _Game::DiemTC_DuyetCheoPhai(int dong, int cot)
 {
-	_y -= 2;
-	if (_y < 1) _y = (_b->getSize() * 2) - 1;
-	_Common::gotoxy(_x, _y);
+	int diemtru = 0;
+	if (dong == BOARD_SIZE || dong * cot == 0 || cot == BOARD_SIZE) diemtru = 9;
+	int SoQuanTa = 0;
+	int SoQuanDich = 0;
+	//duyệt chéo xuống dưới
+	for (int Dem = 1; Dem < 6 && dong + Dem < BOARD_SIZE && cot + Dem < BOARD_SIZE; Dem++)
+	{
+		int check = _b->getPoint(dong + Dem, cot + Dem).getCheck();
+		if (check == 1) SoQuanTa++;
+		else if (check == -1)
+		{
+			SoQuanDich++;
+			break;
+		}
+		else break;//gặp ô trống
+	}
+	//duyệt chéo lên trên
+	for (int Dem = 1; Dem < 6 && dong - Dem >= 0 && cot - Dem >= 0; Dem++)
+	{
+		int check = _b->getPoint(dong - Dem, cot - Dem).getCheck();
+		if (check == 1) SoQuanTa++;
+		else if (check == -1)
+		{
+			SoQuanDich++;
+			break;
+		}
+		else break;//gặp ô trống
+	}
+	//Bị chặn 2 đầu
+	if (SoQuanDich == 2) return 0;
+	return MangDiemTanCong[SoQuanTa] - MangDiemPhongNgu[SoQuanDich + 1] - diemtru;
 }
 
-
-void _Game::Undo(Player& first, Player& second) {
-	if ((first.getID() + second.getID()) <= 0) { return; }
-	for (int i = 0; i < _b->getSize(); ++i) {
-		for (int j = 0; j < _b->getSize(); ++j) {
-			if ((first.getID() + second.getID()) == abs(_b->getIJ(i, j))) {
-				if ((first.getID() + second.getID()) % 2 == 0) {
-					--second;
-				}
-				else --first;
-
-				_b->setIJ(i, j, 0);
-				_x = j * 4 + 2;
-				_y = i * 2 + 1;
-				
-				
-				_Picture::clear_x_o();
-				if ((first.getID() + second.getID()) % 2 == 0) _Picture::draw_x();
-				else _Picture::draw_o();
-				_Common::textcolor(0 + BackRound_play * 16);
-
-
-				_Common::gotoxy(_x, _y);
-				cout << " ";
-				_Common::gotoxy(_x, _y);
-				return;
-			}
+long _Game::DiemTC_DuyetCheoTrai(int dong, int cot)
+{
+	int diemtru = 0;
+	if (dong == BOARD_SIZE || dong * cot == 0 || cot == BOARD_SIZE) diemtru = 9;
+	int SoQuanTa = 0;
+	int SoQuanDich = 0;
+	//duyệt chéo xuống dưới
+	for (int Dem = 1; Dem < 6 && dong + Dem < BOARD_SIZE && cot - Dem >= 0; Dem++)
+	{
+		int check = _b->getPoint(dong + Dem, cot - Dem).getCheck();
+		if (check == 1) SoQuanTa++;
+		else if (check == -1)
+		{
+			SoQuanDich++;
+			break;
 		}
+		else break;//gặp ô trống
 	}
+	//duyệt chéo lên trên
+	for (int Dem = 1; Dem < 6 && dong - Dem >= 0 && cot + Dem < BOARD_SIZE; Dem++)
+	{
+		int check = _b->getPoint(dong - Dem, cot + Dem).getCheck();
+		if (check == 1) SoQuanTa++;
+		else if (check == -1)
+		{
+			SoQuanDich++;
+			break;
+		}
+		else break;//gặp ô trống
+	}
+	//Bị chặn 2 đầu
+	if (SoQuanDich == 2) return 0;
+	return MangDiemTanCong[SoQuanTa] - MangDiemPhongNgu[SoQuanDich + 1] - diemtru;
 }
 
+//phòng ngự
 
-
-string Time() {
-	time_t current_time;
-	struct tm  local_time;
-	time(&current_time);
-	localtime_s(&local_time, &current_time);
-
-	string Year = to_string(local_time.tm_year + 1900);
-	string Month = to_string(local_time.tm_mon + 1);
-	string Day = to_string(local_time.tm_mday);
-
-	string Hour = to_string(local_time.tm_hour);
-	string Min = to_string(local_time.tm_min);
-	string Sec = to_string(local_time.tm_sec);
-	return  Day + "-" + Month + "-" + Year + " (" + Hour + ":" + Min + ":" + Sec + ")";
+long _Game::DiemPN_DuyetDoc(int dong, int cot)
+{
+	int SoQuanTa = 0;
+	int SoQuanDich = 0;
+	//duyệt trên xuống
+	for (int Dem = 1; Dem < 6 && dong + Dem < BOARD_SIZE; Dem++)
+	{
+		int check = _b->getPoint(dong + Dem, cot).getCheck();
+		if (check == 1)
+		{
+			SoQuanTa++;
+			break;
+		}
+		else if (check == -1) SoQuanDich++;
+		else break;//gặp ô trống
+	}
+	//duyệt dưới lên
+	for (int Dem = 1; Dem < 6 && dong - Dem >= 0; Dem++)
+	{
+		int check = _b->getPoint(dong - Dem, cot).getCheck();
+		if (check == 1)
+		{
+			SoQuanTa++;
+			break;
+		}
+		else if (check == -1) SoQuanDich++;
+		else break;
+	}
+	//Đã chặn 2 đầu
+	if (SoQuanTa == 2) return 0;
+	return MangDiemPhongNgu[SoQuanDich];
 }
 
-void _Game::Save(Player first, Player second, _Menu& Menu) {
-	string file = "";
-	ofstream write;
-	_Common::gotoxy(left_mid_x_pipeline - 2, down_y_pipeline + 1);
-	cout << "nhap ten: ";
-	getline(cin, file);
-
-
-	Menu.add_to_list(file, Time());
-
-	_Common::gotoxy(left_mid_x_pipeline - 2, down_y_pipeline + 1);
-	cout << "                           ";
-	write.open(file + ".txt", ios::out);
-	write << first;
-	write << second;
-	for (int i = 0; i < _b->getSize(); ++i) {
-		for (int j = 0; j < _b->getSize(); ++j) {
-			write << _b->getIJ(i, j) << " ";
-		} 
-		write << endl;
+long _Game::DiemPN_DuyetNgang(int dong, int cot)
+{
+	int SoQuanTa = 0;
+	int SoQuanDich = 0;
+	//duyệt bên phải
+	for (int Dem = 1; Dem < 6 && cot + Dem < BOARD_SIZE; Dem++)
+	{
+		int check = _b->getPoint(dong, cot + Dem).getCheck();
+		if (check == 1)
+		{
+			SoQuanTa++;
+			break;
+		}
+		else if (check == -1) SoQuanDich++;
+		else break;//gặp ô trống
 	}
-	_Common::gotoxy(_x, _y);
-	write.close();
+	//duyệt bên trái
+	for (int Dem = 1; Dem < 6 && cot - Dem >= 0; Dem++)
+	{
+		int check = _b->getPoint(dong, cot - Dem).getCheck();
+		if (check == 1)
+		{
+			SoQuanTa++;
+			break;
+		}
+		else if (check == -1) SoQuanDich++;
+		else break;//gặp ô trống
+	}
+	//Đã chặn 2 đầu
+	if (SoQuanTa == 2) return 0;
+
+	return MangDiemPhongNgu[SoQuanDich];
 }
 
-//void _Game::dele(_Menu& Menu, int chose) {
-//	Menu.Saved.erase(Menu.Saved.begin() + chose);
-//}
-
-void _Game::loading(Player& first, Player& second, _Menu Menu, int chose) {
-	ifstream read;
-	int n;
-	read.open(Menu.Saved[chose].getName() + ".txt");
-	read >> first;
-	read >> second; 
-	for (int i = 0; i < _b->getSize(); ++i) {
-		for (int j = 0; j < _b->getSize(); ++j) {
-			read >> n;
-			_b->setIJ(i, j, n);
+long _Game::DiemPN_DuyetCheoPhai(int dong, int cot)
+{
+	int SoQuanTa = 0;
+	int SoQuanDich = 0;
+	//duyệt chéo xuống dưới
+	for (int Dem = 1; Dem < 6 && dong + Dem < BOARD_SIZE && cot + Dem < BOARD_SIZE; Dem++)
+	{
+		int check = _b->getPoint(dong + Dem, cot + Dem).getCheck();
+		if (check == 1)
+		{
+			SoQuanTa++;
+			break;
 		}
+		else if (check == -1) SoQuanDich++;
+		else break;//gặp ô trống
 	}
-	read.close();
+	//duyệt chéo lên trên
+	for (int Dem = 1; Dem < 6 && dong - Dem >= 0 && cot - Dem >= 0; Dem++)
+	{
+		int check = _b->getPoint(dong - Dem, cot - Dem).getCheck();
+		if (check == 1)
+		{
+			SoQuanTa++;
+			break;
+		}
+		else if (check == -1) SoQuanDich++;
+		else break;//gặp ô trống
+	}
+	//Đã chặn 2 đầu
+	if (SoQuanTa == 2) return 0;
+	return MangDiemPhongNgu[SoQuanDich];
 }
 
-
-//// may
-
-bool _Game::bad_trip_1(int count, int i, int j) {
-	for (int x = 0; x < 5; ++x) {
-		for (int y = 10 + x; y < _b->getSize(); ++y) {
-			if ((x == j && y == i) || (x == i && y == j)) {
-				if (y == (10 + x)) {
-					++count;
-				}
-				else return true;
-			}
+long _Game::DiemPN_DuyetCheoTrai(int dong, int cot)
+{
+	int SoQuanTa = 0;
+	int SoQuanDich = 0;
+	//duyệt chéo xuống dưới
+	for (int Dem = 1; Dem < 6 && dong + Dem < BOARD_SIZE && cot - Dem >= 0; Dem++)
+	{
+		int check = _b->getPoint(dong + Dem, cot - Dem).getCheck();
+		if (check == 1)
+		{
+			SoQuanTa++;
+			break;
 		}
+		else if (check == -1) SoQuanDich++;
+		else break; //gặp ô trống
 	}
-	if (count == 2) return true;
-	else return false;
-}
-
-bool _Game::bad_trip_2(int count, int i, int j) {
-	for (int x = 0; x < 5; ++x) {
-		for (int y = 0; y < (5 - x); ++y) {
-			if ((x == j && y == i)) {
-				if (y == (4 - x)) {
-					++count;
-					break;//3 1
-				}
-				else return true;
-			}
+	//duyệt chéo lên trên
+	for (int Dem = 1; Dem < 6 && dong - Dem >= 0 && cot + Dem < BOARD_SIZE; Dem++)
+	{
+		int check = _b->getPoint(dong - Dem, cot + Dem).getCheck();
+		if (check == 1)
+		{
+			SoQuanTa++;
+			break;
 		}
+		else if (check == -1) SoQuanDich++;
+		else break;//gặp ô trống
 	}
-
-	int alpha = 0;
-
-	for (int x = 10; x < _b->getSize(); ++x) {
-		for (int y = 14 - alpha; y < _b->getSize(); ++y) {
-			if (x == j && y == i) {
-				if (y == (14 - alpha)) {
-					++count;
-					break;
-				}
-				else return true;
-			}
-		}
-		++alpha;
-	}
-
-	if (count == 2) return true;
-	else return false;
-}
-
-long long _Game::attack_Dong(int i, int j) {
-	long long local_bad = 0, total = 0;
-	if (i == 0 || i == (_b->getSize() - 1)) local_bad = 27;
-	int count = 1;
-	int computer = 0;
-	int player = 0;
-	bool flag_left = true, flag_right = true;
-	bool align = false;
-	while (count < 6 && (flag_left || flag_right)) {
-		if ((i - count) > -1 && flag_left) {
-			if (_b->getIJ(i - count, j) < 0) {
-				++computer;
-			}
-			else {
-				if (_b->getIJ(i - count, j) > 0) {
-					++player;
-				}
-				flag_left = false;
-			}
-		}
-		else if (!align && flag_left) {
-			flag_left = false;
-			align = true;
-		}
-
-		if ((i + count) < _b->getSize() && flag_right) {
-			if (_b->getIJ(i + count, j) < 0) {
-				++computer;
-			}
-			else {
-				if (_b->getIJ(i + count, j) > 0) {
-					++player;
-				}
-				flag_right = false;
-			}
-		}
-		else if (!align && flag_right) {
-			flag_right = false;
-			align = true;
-		}
-		++count;
-	}
-
-	if (player == 2 || computer >= 5 || (align && player == 1 && computer != 4)) return total;
-	else total = attack[computer] - defense[player + 1] - local_bad;
-
-	return total;
-}
-
-long long _Game::attack_Cot(int i, int j) {
-	long long local_bad = 0, total = 0;
-	if (j == 0 || j == (_b->getSize() - 1)) local_bad = 27;
-	int count = 1;
-	int computer = 0;
-	int player = 0;
-	bool flag_top = true, flag_down = true;
-	bool align = false;
-	while (count < 6 && (flag_top || flag_down)) {
-		if ((j - count) > -1 && flag_top) {
-			if (_b->getIJ(i, j - count) < 0) {
-				++computer;
-			}
-			else {
-				if (_b->getIJ(i, j - count) > 0) {
-					++player;
-				}
-				flag_top = false;
-			}
-		}
-		else if (!align && flag_top) {
-			flag_top = false;
-			align = true;
-		}
-
-		if ((j + count) < _b->getSize() && flag_down) {
-			if (_b->getIJ(i, j + count) < 0) {
-				++computer;
-			}
-			else {
-				if (_b->getIJ(i, j + count) > 0) {
-					++player;
-				}
-				flag_down = false;
-			}
-		}
-		else if (!align && flag_down) {
-			flag_down = false;
-			align = true;
-		}
-		++count;
-	}
-
-	if (player == 2 || computer >= 5 || (align && player == 1 && computer != 4)) return total;
-	else total = attack[computer] - defense[player + 1] - local_bad;
-
-	return total;
-}
-
-long long _Game::attack_Cheo_1(int i, int j) {
-	long long local_bad = 0, total = 0;
-	if (i * j == 0 || i == (_b->getSize() - 1) || j == (_b->getSize() - 1)) local_bad = 27;
-	int count = 1;
-	int computer = 0;
-	int player = 0;
-	bool flag_top = true, flag_down = true;
-	bool align = false;
-	while (count < 6 && (flag_top || flag_down)) {
-		if ((i - count) > -1 && (j - count) > -1 && flag_top) {
-
-			if ((_b->getIJ(i - count, j - count) < 0)) {
-				++computer;
-			}
-			else {
-				if ((_b->getIJ(i - count, j - count) > 0)) {
-					++player;
-				}
-				flag_top = false;
-			}
-		}
-		else if (!align && flag_top) {
-			flag_top = false;
-			align = true;
-		}
-
-		if ((i + count) < _b->getSize() && (j + count) < _b->getSize() && flag_down) {
-			if ((_b->getIJ(i + count, j + count) < 0)) {
-				++computer;
-			}
-			else {
-				if ((_b->getIJ(i + count, j + count) > 0)) {
-					++player;
-				}
-				flag_down = false;
-			}
-		}
-		else if (!align && flag_down) {
-			flag_down = false;
-			align = true;
-		}
-		++count;
-	}
-
-	if (player == 2 || computer >= 5 || bad_trip_1(player, i, j) || (align && player == 1 && computer != 4)) return total;
-	else total = attack[computer] - defense[player + 1] - local_bad;
-
-	return total;
-}
-
-long long _Game::attack_Cheo_2(int i, int j) {
-	long long local_bad = 0, total = 0;
-	if (i * j == 0 || i == (_b->getSize() - 1) || j == (_b->getSize() - 1)) local_bad = 27;
-	int count = 1;
-	int computer = 0;
-	int player = 0;
-	bool flag_top = true, flag_down = true;
-	bool align = false;
-	while (count < 6 && (flag_top || flag_down)) {
-		if ((i - count) > -1 && (j + count) < _b->getSize() && flag_top) {
-
-			if (_b->getIJ(i - count, j + count) < 0) {
-				++computer;
-			}
-			else {
-				if (_b->getIJ(i - count, j + count) > 0) {
-					++player;
-				}
-				flag_top = false;
-			}
-		}
-		else if (!align && flag_top) {
-			flag_top = false;
-			align = true;
-		}
-
-		if ((i + count) < _b->getSize() && (j - count) > -1 && flag_down) {
-			if (_b->getIJ(i + count, j - count) < 0) {
-				++computer;
-			}
-			else {
-				if (_b->getIJ(i + count, j - count) > 0) {
-					++player;
-				}
-				flag_down = false;
-			}
-		}
-		else if (!align && flag_down) {
-			flag_down = false;
-			align = true;
-		}
-		++count;
-	}
-	if (player == 2 || computer >= 5 || bad_trip_2(player, i, j) || (align && player == 1 && computer != 4)) return total;
-	else total = attack[computer] - defense[player + 1] - local_bad;
-
-	return total;
-}
-
-long long _Game::defen_Dong(int i, int j) {
-	long long total = 0;
-	int count = 1;
-	int computer = 0, player = 0;
-	bool flag_left = true, flag_right = true;
-	bool align = false;
-	while (count < 6 && (flag_left || flag_right)) {
-		if ((i - count) > -1 && flag_left) {
-			if (_b->getIJ(i - count, j) > 0) {
-				++player;
-			}
-			else {
-				if (_b->getIJ(i - count, j) < 0) ++computer;
-				flag_left = false;
-			}
-		}
-		else if (!align && flag_left) {
-			align = true;
-			flag_left = false;
-		}
-
-		if ((i + count) < _b->getSize() && flag_right) {
-			if (_b->getIJ(i + count, j) > 0) {
-				++player;
-			}
-			else {
-				if (_b->getIJ(i + count, j) < 0) ++computer;
-				flag_right = false;
-			}
-		}
-		else if (!align && flag_right) {
-			align = true;
-			flag_right = false;
-		}
-		++count;
-	}
-	if (computer == 2 || player >= 5 || (computer == 1 && align && player < 4)) return total;
-	total = defense[player];
-	if (player > 0) total -= attack[computer] * 2;
-	return total;
-}
-
-long long _Game::defen_Cot(int i, int j) {
-	long long total = 0;
-	int count = 1;
-	int computer = 0, player = 0;
-	bool flag_up = true, flag_down = true;
-	bool align = false;
-	while (count < 6 && (flag_up || flag_down)) {
-		if ((j - count) > -1 && flag_up) {
-			if (_b->getIJ(i, j - count) > 0) {
-				++player;
-			}
-			else {
-				if (_b->getIJ(i, j - count) < 0) ++computer;
-				flag_up = false;
-			}
-		}
-		else if (!align && flag_up) {
-			align = true;
-			flag_up = false;
-		}
-
-		if ((j + count) < _b->getSize() && flag_down) {
-			if (_b->getIJ(i, j + count) > 0) {
-				++player;
-			}
-			else {
-				if (_b->getIJ(i, j + count) < 0) ++computer;
-				flag_down = false;
-			}
-		}
-		else if (!align && flag_down) {
-			align = true;
-			flag_down = false;
-		}
-		++count;
-	}
-	if (computer == 2 || player >= 5 || (computer == 1 && align && player < 4)) return total;
-	total = defense[player];
-	if (player > 0) total -= attack[computer] * 2;
-	return total;
-}
-
-long long _Game::defen_Cheo_1(int i, int j) {
-	long long total = 0;
-	int count = 1;
-	int computer = 0, player = 0;
-	bool flag_up = true, flag_down = true;
-	bool align = false;
-	while (count < 6 && (flag_down || flag_up)) {
-		if ((i - count) > -1 && (j - count) > -1 && flag_up) {
-			if (_b->getIJ(i - count, j - count) > 0) ++player;
-			else {
-				if (_b->getIJ(i - count, j - count) < 0) ++computer;
-				flag_up = false;
-			}
-		}
-		else if (!align && flag_up) {
-			align = true;
-			flag_up = false;
-		}
-
-		if ((i + count) < _b->getSize() && (j + count) < _b->getSize() && flag_down) {
-			if (_b->getIJ(i + count, j + count) > 0) ++player;
-			else {
-				if (_b->getIJ(i + count, j + count) < 0) ++computer;
-				flag_down = false;
-			}
-		}
-		else if (!align && flag_down) {
-			align = true;
-			flag_down = false;
-		}
-		++count;
-	}
-	if (computer == 2 || player >= 5 || bad_trip_1(computer, i, j) || (computer == 1 && align && player < 4)) return total;
-	total = defense[player];
-	if (player > 0) total -= attack[computer] * 2;
-	return total;
-}
-
-long long _Game::defen_Cheo_2(int i, int j) {
-	long long total = 0;
-	int count = 1;
-	int computer = 0, player = 0;
-	bool flag_up = true, flag_down = true;
-	bool align = false;
-	while (count < 6 && (flag_up || flag_down)) {
-		if ((i - count) > -1 && (j + count) < _b->getSize() && flag_up) {
-			if (_b->getIJ(i - count, j + count) > 0) ++player;
-			else {
-				if (_b->getIJ(i - count, j + count) < 0) ++computer;
-				flag_up = false;
-			}
-		}
-		else if (!align && flag_up) {
-			align = true;
-			flag_up = false;
-		}
-
-		if ((i + count) < _b->getSize() && (j - count) > -1 && flag_down) {
-			if (_b->getIJ(i + count, j - count) > 0) ++player;
-			else {
-				if (_b->getIJ(i + count, j - count) < 0) ++computer;
-				flag_down = false;
-			}
-		}
-		else if (!align && flag_down) {
-			align = true;
-			flag_down = false;
-		}
-		++count;
-	}
-	if (computer == 2 || player >= 5 || bad_trip_2(computer, i, j) || (computer == 1 && align && player < 4)) return total;
-	total = defense[player];
-	if (player > 0) total -= attack[computer] * 2;
-	return total;
-}
-
-vector<int> _Game::minimax() {
-	vector<int> bestMove(2);//0 row   -----  1 col
-	long long max = 0;
-	for (int i = 0; i < _b->getSize(); ++i) {
-		for (int j = 0; j < _b->getSize(); ++j) {
-			if (_b->getIJ(i, j) == 0) {
-				long long attack = attack_Cot(i, j) + attack_Dong(i, j) + attack_Cheo_1(i, j) + attack_Cheo_2(i, j);
-				long long defen = defen_Cot(i, j) + defen_Dong(i, j) + defen_Cheo_1(i, j) + defen_Cheo_2(i, j);
-				long long model = max(attack, defen);
-				if (max < model) {
-					max = model;
-					bestMove[0] = i;
-					bestMove[1] = j;
-				}
-			}
-		}
-	}
-	return bestMove;
+	//Đã chặn 2 đầu
+	if (SoQuanTa == 2) return 0;
+	return MangDiemPhongNgu[SoQuanDich];
 }
