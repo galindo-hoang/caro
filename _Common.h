@@ -2,7 +2,7 @@
 #include <iostream>
 #include <Windows.h>
 #define Width  1000
-#define Height  600
+#define Height  550
 #define Columns 119
 #define Rows 31
 #define BackRound_menu 0
@@ -24,8 +24,3 @@ public:
 	static void Hidden_Cursor();
 	static void Show_Cursor();
 };
-
-
-
-
-
