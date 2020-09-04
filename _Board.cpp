@@ -2,10 +2,6 @@
 
 int _Board::getSize() { return _size; }
 
-//int _Board::getLeft() { return _left; }
-
-//int _Board::getTop() { return _top; }
-
 int _Board::getXAt(int i, int j) { return _pArr[i][j].getX(); }
 
 int _Board::getYAt(int i, int j) { return _pArr[i][j].getY(); }
@@ -14,8 +10,6 @@ _Board::_Board()
 {
 
 	_size = 0;
-	/*_left = 0;
-	_top = 0;*/
 	_pArr = NULL;
 }
 
@@ -23,8 +17,6 @@ _Board::_Board(int pSize, int pX, int pY)
 {
 
 	_size = pSize;
-	//_left = pX;
-	//_top = pY;
 	_pArr = new _Point * [pSize];
 	for (int i = 0; i < pSize; i++) _pArr[i] = new _Point[pSize];
 }
@@ -43,8 +35,6 @@ void _Board::resetData()
 	{
 		for (int j = 0; j < _size; j++)
 		{
-			//_pArr[i][j].setX(4 * j + _left + 2); // Trùng với hoành độ màn hình bàn cờ
-			//_pArr[i][j].setY(2 * i + _top + 1); // Trùng với tung độ màn hình bàn cờ
 			_pArr[i][j].setCheck(0);
 		}
 	}
