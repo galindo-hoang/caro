@@ -34,4 +34,3 @@ public:
 	friend ofstream& operator<<(ofstream&, Player);
 	friend ifstream& operator>>(ifstream&, Player&);
 };
-
