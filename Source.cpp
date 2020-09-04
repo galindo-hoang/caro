@@ -35,7 +35,6 @@ void Play() {
 	string file = "";
 	vector<int> bestMove(2);
 	_Common::ClearConsoleToColors(1);
-	char ar;
 	bool ha = false;
 
 	Game.startGame(first, second);
@@ -48,9 +47,15 @@ void Play() {
 				Game.setXY(bestMove[1] * 4 + 2, bestMove[0] * 2 + 1);
 
 				if (Game.processCheckBoard(first, second)) {
-
-					if (Game.processFinish(first, second)) {
-						_Common::gotoxy(0, _Common::getRows());
+					switch (Game.processFinish(first, second)) {
+						case 'y':case'Y':
+							_Common::ClearConsoleToColors(1);
+							Game.startGame(first, second);
+							break;
+						case 'n': case'N':
+							first.~Player();
+							second.~Player();
+							Game.exitGame();
 						return;
 					}
 				}
@@ -58,20 +63,24 @@ void Play() {
 			else if (second.getName() == "easy") {
 				bestMove = Game.easy();
 				Game.setXY(bestMove[1] * 4 + 2, bestMove[0] * 2 + 1);
-
 				if (Game.processCheckBoard(first, second)) {
-
-					if (Game.processFinish(first, second)) {
-						_Common::gotoxy(0, _Common::getRows());
+					switch (Game.processFinish(first, second)) {
+					case 'y':case'Y':
+						_Common::ClearConsoleToColors(1);
+						Game.startGame(first, second);
+						break;
+					case 'n': case'N':
+						first.~Player();
+						second.~Player();
+						Game.exitGame();
 						return;
 					}
 				}
 			}
 		}
 		
-		ar = _getch();
 
-		switch (ar) {
+		switch (_getch()) {
 		case 'w': case 'W': case 72:
 			Game.moveUp();
 			break;
@@ -136,7 +145,6 @@ void Load_Game(bool menu) {
 	int start_y = Head_y + 3;
 	int end_y = start_y + (Menu.Saved.size() - 1) * 2;
 	int current = start_y;
-	char pointer;
 	int chose;
 	for (int i = 0; i < _Common::getColumns(); ++i) {
 		_Common::gotoxy(i, Head_y);
@@ -153,9 +161,8 @@ void Load_Game(bool menu) {
 
 
 	while (true) {
-		pointer = _getch();
 
-		switch (pointer) {
+		switch (_getch()) {
 		case 's': case 80:
 			current += 2;
 			if (current > end_y) current = start_y;
@@ -341,12 +348,12 @@ void About() {
 	_Common::gotoxy((end_x + start_x - Menu.Head_About.size() + 2) / 2, (start_y + mid_y) / 2);
 	cout << Menu.Head_About;
 
-	for (int y = 1; y < 5; y++) {
+	for (int y = 1; y <= sizeof(Menu.ID_About) / sizeof(string); y++) {
 		if (y == 1) {
 			_Common::gotoxy(start_x + 2, mid_y + y * 2);
 			cout << "design : ";
 		}
-		else if (y == 4) {
+		else if (y == sizeof(Menu.ID_About) / sizeof(string)) {
 			_Common::gotoxy(start_x + 2, mid_y + y * 2);
 			cout << "year   : ";
 		}
