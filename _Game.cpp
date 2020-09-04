@@ -17,7 +17,7 @@ _Game::~_Game() { delete _b; }
 
 int _Game::getCommand() { return _command; }
 
-bool _Game::isContinue() { return _loop; }
+void _Game::SetLoop(bool loop) { this->_loop = loop; }
 
 void _Game::setXY(int x, int y) {
 	_x = x;
@@ -38,6 +38,8 @@ char _Game::askContinue()
 
 void _Game::startGame(Player& first, Player& second)
 {
+	bool played = PlaySound(L"ting.wav", NULL, SND_ASYNC && SND_LOOP && SND_NOSTOP);
+	_Common::Show_Cursor();
 	_Picture::clear_x_o();
 	if (_loop) {
 		first.setID(0);
@@ -45,6 +47,7 @@ void _Game::startGame(Player& first, Player& second)
 		_b->resetData();
 	}
 	else _loop = true;
+
 	_b->drawBoard(first, second);
 	_x = 2;
 	_y = 1;
@@ -60,6 +63,8 @@ void _Game::exitGame()
 	_loop = false;
 	_Common::ClearConsoleToColors(0);
 	_b->resetData();
+	_Common::Hidden_Cursor();
+	bool play = PlaySound(L"verystrong.wav", NULL, SND_LOOP && SND_ASYNC);
 }
 
 bool _Game::processCheckBoard(Player& first, Player& second)
@@ -85,6 +90,7 @@ bool _Game::processCheckBoard(Player& first, Player& second)
 	case 0:
 		return false;
 	}
+	bool played = PlaySound(L"press.wav", NULL, SND_ASYNC);
 	_b->drawTurn(first.getID(), second.getID());
 	_Common::gotoxy(_x, _y);
 	return true;
@@ -123,9 +129,12 @@ char _Game::processFinish(Player& first, Player& second) {
 		break;
 	}
 
-	char result;
+	string result;
 	_Common::textcolor(0 + BackRound_play * 16);
 	while (run) {
+		if (run) {
+			bool played = PlaySound(L"glory.wav", NULL, SND_ASYNC);
+		}
 		_Common::gotoxy(left_x_pipeline + 1, _Common::getRows() - 3);
 		cout << "   Do you want to play continue Y/N";
 		_Common::gotoxy(left_x_pipeline + 1, _Common::getRows() - 2);
@@ -136,10 +145,12 @@ char _Game::processFinish(Player& first, Player& second) {
 		_Common::gotoxy(left_x_pipeline + 1, _Common::getRows() - 2);
 		cout << "              (yes/no): ";
 		cout << "    ";
-		if (result == 'y' || result == 'Y' || result == 'n' || result == 'N') {
-			return result;
+		if (result[0] == 'y' || result[0] == 'Y' || result[0] == 'n' || result[0] == 'N') {
+			char mod = result[0];
+			result.clear();
+			return mod;
 		}
-		result = '\0';
+		result = "";
 	}
 	
 	return '\0';
@@ -150,6 +161,7 @@ void _Game::moveRight()
 	_x += 4;
 	if (_x > (_b->getSize() * 4)) _x = 2;
 	_Common::gotoxy(_x, _y);
+	bool played = PlaySound(L"move1.wav", NULL, SND_ASYNC);
 }
 
 void _Game::moveLeft()
@@ -157,6 +169,7 @@ void _Game::moveLeft()
 	_x -= 4;
 	if (_x < 2) _x = (_b->getSize() * 4) - 2;
 	_Common::gotoxy(_x, _y);
+	bool played = PlaySound(L"move1.wav", NULL, SND_ASYNC);
 }
 
 void _Game::moveDown()
@@ -164,6 +177,7 @@ void _Game::moveDown()
 	_y += 2;
 	if (_y > (_b->getSize() * 2)) _y = 1;
 	_Common::gotoxy(_x, _y);
+	bool played = PlaySound(L"move1.wav", NULL, SND_ASYNC);
 }
 
 void _Game::moveUp()
@@ -171,6 +185,7 @@ void _Game::moveUp()
 	_y -= 2;
 	if (_y < 1) _y = (_b->getSize() * 2) - 1;
 	_Common::gotoxy(_x, _y);
+	bool played = PlaySound(L"move1.wav", NULL, SND_ASYNC);
 }
 
 
@@ -198,6 +213,7 @@ void _Game::Undo(Player& first, Player& second) {
 				_Common::gotoxy(_x, _y);
 				cout << " ";
 				_Common::gotoxy(_x, _y);
+				bool played = PlaySound(L"undo.wav", NULL, SND_ASYNC);
 				return;
 			}
 		}
@@ -245,11 +261,9 @@ void _Game::Save(Player first, Player second, _Menu& Menu) {
 	}
 	_Common::gotoxy(_x, _y);
 	write.close();
+	bool played = PlaySound(L"save.wav", NULL, SND_ASYNC);
+	Menu.fixTXT();
 }
-
-//void _Game::dele(_Menu& Menu, int chose) {
-//	Menu.Saved.erase(Menu.Saved.begin() + chose);
-//}
 
 void _Game::loading(Player& first, Player& second, _Menu Menu, int chose) {
 	ifstream read;
@@ -269,6 +283,21 @@ void _Game::loading(Player& first, Player& second, _Menu Menu, int chose) {
 
 //// may
 
+// easy
+
+vector<int> _Game::easy() {
+	srand(time(NULL));
+	vector<int> stipud(2);
+	stipud[0] = rand() % 15;
+	stipud[1] = rand() % 15;
+	while (this->_b->getIJ(stipud[0], stipud[1]) != 0) {
+		stipud[0] = rand() % 15;
+		stipud[1] = rand() % 15;
+	}
+	return stipud;
+}
+
+// hrad
 bool _Game::bad_trip_1(int count, int i, int j) {
 	for (int x = 0; x < 5; ++x) {
 		for (int y = 10 + x; y < _b->getSize(); ++y) {
@@ -673,7 +702,7 @@ long long _Game::defen_Cheo_2(int i, int j) {
 	return total;
 }
 
-vector<int> _Game::minimax() {
+vector<int> _Game::alpha_beta() {
 	vector<int> bestMove(2);//0 row   -----  1 col
 	long long max = 0;
 	for (int i = 0; i < _b->getSize(); ++i) {
