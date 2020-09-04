@@ -131,15 +131,13 @@ char _Game::processFinish(Player& first, Player& second) {
 
 	string result;
 	_Common::textcolor(0 + BackRound_play * 16);
+	if (run) bool played = PlaySound(L"glory.wav", NULL, SND_ASYNC);
 	while (run) {
-		if (run) {
-			bool played = PlaySound(L"glory.wav", NULL, SND_ASYNC);
-		}
 		_Common::gotoxy(left_x_pipeline + 1, _Common::getRows() - 3);
 		cout << "   Do you want to play continue Y/N";
 		_Common::gotoxy(left_x_pipeline + 1, _Common::getRows() - 2);
 		cout << "              (yes/no): ";
-		cin >> result;
+		getline(cin, result);
 		_Common::gotoxy(left_x_pipeline + 1, _Common::getRows() - 3);
 		cout << "   Do you want to play continue Y/N";
 		_Common::gotoxy(left_x_pipeline + 1, _Common::getRows() - 2);
@@ -150,7 +148,7 @@ char _Game::processFinish(Player& first, Player& second) {
 			result.clear();
 			return mod;
 		}
-		result = "";
+		result.clear();
 	}
 	
 	return '\0';
@@ -199,6 +197,8 @@ void _Game::Undo(Player& first, Player& second) {
 				}
 				else --first;
 
+				_b->drawTurn(first.getID(), second.getID());
+
 				_b->setIJ(i, j, 0);
 				_x = j * 4 + 2;
 				_y = i * 2 + 1;
@@ -239,14 +239,11 @@ string Time() {
 }
 
 void _Game::Save(Player first, Player second, _Menu& Menu) {
-	string file = "";
+	string file;
 	ofstream write;
 	_Common::gotoxy(left_mid_x_pipeline - 2, down_y_pipeline + 1);
 	cout << "nhap ten: ";
 	getline(cin, file);
-
-
-	Menu.add_to_list(file, Time());
 
 	_Common::gotoxy(left_mid_x_pipeline - 2, down_y_pipeline + 1);
 	cout << "                           ";
@@ -259,10 +256,14 @@ void _Game::Save(Player first, Player second, _Menu& Menu) {
 		} 
 		write << endl;
 	}
+
+
+	Menu.add_to_list(file, Time());
+
 	_Common::gotoxy(_x, _y);
 	write.close();
-	bool played = PlaySound(L"save.wav", NULL, SND_ASYNC);
 	Menu.fixTXT();
+	bool played = PlaySound(L"save.wav", NULL, SND_ASYNC);
 }
 
 void _Game::loading(Player& first, Player& second, _Menu Menu, int chose) {
