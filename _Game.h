@@ -15,29 +15,29 @@ using namespace std;
 class _Game: public _Picture
 {
 private:
-	_Board* _b;// một bàn cờ
-	int _x, _y; // Tọa độ hiện hành của nháy chuột
-	int _command; // phím gõ từ người dùng
-	bool _loop = false; // Biến quyết định thoát game hay 60hông
+	_Board* _b;
+	int _x, _y; 
+	int _command; 
+	bool _loop = false; 
 	long long attack[7] = { 0, 3, 24, 192, 1536, 12288, 98304 };
 	long long defense[7] = { 0, 1, 9, 81, 729, 6561, 59049 };
 public:
 	_Game(Player&, Player&, int, int, int);
 	~_Game();
 
+	char waitKeyBoard(); 
 	int getCommand();
-	bool isContinue();
-	char waitKeyBoard(); // Hàm nhận phím từ người dùng
 	char askContinue();
-	void startGame(Player&, Player&); // Hàm bắt đầu game
-	void exitGame(); // Hàm thoát game
+
+	void SetLoop(bool loop = false);
+	void startGame(Player&, Player&); 
+	void exitGame(); 
 	char processFinish(Player&, Player&);
 	bool processCheckBoard(Player&, Player&);
 
 	void Undo(Player&, Player&);
 	void Save(Player, Player, _Menu&);
 
-//	void dele(_Menu&, int);
 	void loading(Player&, Player&, _Menu, int);
 
 	void moveRight();
@@ -61,6 +61,7 @@ public:
 	long long defen_Cheo_1(int, int);
 	long long defen_Cheo_2(int, int);
 
-	vector<int> minimax();
+	vector<int> alpha_beta();
+	vector<int> easy();
 };
 
