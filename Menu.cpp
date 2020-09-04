@@ -18,6 +18,16 @@ _Menu::_Menu() {
 	Read.close();
 }
 
+
+void _Menu::fixTXT() {
+	ofstream write;
+	write.open("ListFile.txt", ios::out);
+	for (unsigned int i = 0; i < Saved.size(); ++i) {
+		write << Saved[i].getName() << "	" << Saved[i].getDate() << endl;
+	}
+	write.close();
+}
+
 _Menu::~_Menu() {
 	ofstream write;
 	write.open("ListFile.txt", ios::out);
