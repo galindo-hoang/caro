@@ -32,7 +32,7 @@ class _Menu:public _Board
 public:
 	string menu[5] = { "New Game" ,"Load Game" ,"Help", "About" ,"Exit" };
 
-	string AI_PerSon[2] = { "Player with Player","Player with Computer" };
+	string AI_PerSon[3] = { "Player with Player","Player with Computer (hard)","Player with Computer (easy)" };
 
 	string Head_Load_Game = "LIST OF GAMES WERE SAVED";
 
@@ -49,7 +49,7 @@ public:
 	_Menu();
 	void show_file(int, int, int);
 	void add_to_list(string, string);
-
+	void fixTXT();
 	~_Menu();
 };
 
