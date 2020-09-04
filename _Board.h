@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <iostream>
 #include "_Point.h"
 #include "_Common.h"
@@ -17,7 +17,6 @@ class _Board
 private:
 	string func[4] = { "1: New Game","2: Load Game","3: Save Game","4: Undo" };
 	int _size;
-//	int _left, _top;
 	_Point** _pArr;
 
 
@@ -26,8 +25,6 @@ public:
 	_Board(int, int, int);
 	~_Board();
 	int getSize();
-//	int getLeft();
-//	int getTop();
 	int getXAt(int, int);
 	int getYAt(int, int);
 
