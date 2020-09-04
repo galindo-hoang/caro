@@ -26,7 +26,7 @@ _Board board(15, 0, 0);
 int y_menu_up = (2 * _Common::getRows() / 3) + 2;
 int y_menu_down = (2 * _Common::getRows() / 3) + 10;
 
-void Load_Game();
+void Load_Game(bool menu = true);
 
 
 
@@ -42,18 +42,31 @@ void Play() {
 
 	while (true) {
 
-		if (second.getName() == "computer" && (first.getID() + second.getID()) % 2 == 1) {
-			bestMove = Game.minimax();
-			Game.setXY(bestMove[1] * 4 + 2, bestMove[0] * 2 + 1);
-			
-			if (Game.processCheckBoard(first, second)) {
+		if ((first.getID() + second.getID()) % 2 == 1) {
+			if (second.getName() == "hard") {
+				bestMove = Game.alpha_beta();
+				Game.setXY(bestMove[1] * 4 + 2, bestMove[0] * 2 + 1);
 
-				if (Game.processFinish(first, second)) {
-					_Common::gotoxy(0, _Common::getRows());
-					return;
+				if (Game.processCheckBoard(first, second)) {
+
+					if (Game.processFinish(first, second)) {
+						_Common::gotoxy(0, _Common::getRows());
+						return;
+					}
 				}
 			}
+			else if (second.getName() == "easy") {
+				bestMove = Game.easy();
+				Game.setXY(bestMove[1] * 4 + 2, bestMove[0] * 2 + 1);
 
+				if (Game.processCheckBoard(first, second)) {
+
+					if (Game.processFinish(first, second)) {
+						_Common::gotoxy(0, _Common::getRows());
+						return;
+					}
+				}
+			}
 		}
 		
 		ar = _getch();
@@ -76,8 +89,11 @@ void Play() {
 			Game.startGame(first, second);
 			break;
 		case '2':
-			Game.exitGame();
-			Load_Game();
+//			Game.exitGame();
+			_Common::Hidden_Cursor();
+
+			Load_Game(false);
+			_Common::Show_Cursor();
 			_Common::ClearConsoleToColors(1);
 			Game.startGame(first, second);
 			break;
@@ -86,9 +102,9 @@ void Play() {
 			break;
 		case '4':
 			Game.Undo(first, second);
-			if (second.getName() == "computer") Game.Undo(first, second);
+			if (second.getName() == "hard" || second.getName() == "easy") Game.Undo(first, second);
 			break;
-		case 32:
+		case 32: case 13:
 			if (Game.processCheckBoard(first, second)) {
 				switch (Game.processFinish(first, second)) {
 				case 'y':case'Y':
@@ -112,7 +128,7 @@ void Play() {
 	}
 }
 
-void Load_Game() {
+void Load_Game(bool menu) {
 	_Common::ClearConsoleToColors(0);
 	string Head = "LIST OF GAMES WERE SAVED";
 	int Head_y = _Common::getRows() / 4;
@@ -152,6 +168,7 @@ void Load_Game() {
 			break;
 		case 27:
 			_Common::ClearConsoleToColors(0);
+			Game.SetLoop(false);
 			return;
 		case 83:
 			chose = (current - start_y) / 2;
@@ -164,12 +181,15 @@ void Load_Game() {
 			cout << "                                                      ";
 
 			if (Menu.Saved.size() > 0) end_y -= 2;
+			Menu.fixTXT();
 			Menu.show_file(start_x, start_y, current);
 			break;
 		case 13: case 32:
 			if (Menu.Saved.size() != 0) {
 				chose = (current - start_y) / 2;
 				Game.loading(first, second, Menu, chose);
+				Game.SetLoop(false);
+				if (menu) Play();
 				return;
 			}
 		}
@@ -201,7 +221,7 @@ void Help() {
 					_Common::gotoxy(x, y);
 					putchar(205);
 				}
-
+				Sleep(20);
 			}
 			else if (y == mid_y) {
 				if (x == start_x) {
@@ -216,7 +236,7 @@ void Help() {
 					_Common::gotoxy(x, y);
 					putchar(205);
 				}
-
+				Sleep(20);
 			}
 			else if (y == end_y) {
 				if (x == start_x) {
@@ -231,12 +251,12 @@ void Help() {
 					_Common::gotoxy(x, y);
 					putchar(205);
 				}
-
+				Sleep(20);
 			}
 			else if (x == start_x || x == end_x) {
 				_Common::gotoxy(x, y);
 				putchar(186);
-
+				Sleep(20);
 			}
 		}
 	}
@@ -278,7 +298,7 @@ void About() {
 					_Common::gotoxy(x, y);
 					putchar(205);
 				}
-				//				Sleep(20);
+				Sleep(20);
 			}
 			else if (y == mid_y) {
 				if (x == start_x) {
@@ -293,7 +313,7 @@ void About() {
 					_Common::gotoxy(x, y);
 					putchar(205);
 				}
-				//				Sleep(20);
+				Sleep(20);
 			}
 			else if (y == end_y) {
 				if (x == start_x) {
@@ -308,12 +328,12 @@ void About() {
 					_Common::gotoxy(x, y);
 					putchar(205);
 				}
-				//				Sleep(20);
+				Sleep(20);
 			}
 			else if (x == start_x || x == end_x) {
 				_Common::gotoxy(x, y);
 				putchar(186);
-				//				Sleep(20);
+				Sleep(20);
 			}
 		}
 	}
@@ -380,11 +400,12 @@ void play_with() {
 			break;
 		case 'S': case's': case 80:
 			current += 2;
-			if (current > (y + 2)) current = y;
+			if (current > (y + 4)) current = y;
 			show_play_with(x, y, current);
 			break;
 		case 13: case 32:
-			if (current == (y + 2)) second.setName("computer");
+			if (current == (y + 2)) second.setName("hard");
+			else if (current == (y + 4)) second.setName("easy");
 			else second.setName("");
 			return;
 		}
@@ -438,6 +459,8 @@ void show_function_menu(int curSor) {
 
 
 void show_menu() {
+	_Common::Hidden_Cursor();
+	bool play = PlaySound(L"verystrong.wav", NULL, SND_LOOP && SND_ASYNC);
 	int current = 0, chose;
 	show_function_menu(current);
 	char pointer;
@@ -486,7 +509,6 @@ void show_menu() {
 				break;
 			case 1:
 				Load_Game();
-				Play();
 				_Common::ClearConsoleToColors(0);
 				_Common::gotoxy(half_Columns, current);
 				show_function_menu(current);
@@ -508,7 +530,8 @@ void show_menu() {
 
 
 
-int main() {
+int main() 
+{
 	_Common q;
 	show_menu();
 }
